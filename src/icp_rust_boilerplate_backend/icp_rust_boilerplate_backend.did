@@ -1,20 +1,23 @@
-type Error = variant { NotFound : record { msg : text } };
+type Error = variant {
+  NotFound : record { msg : text };
+  NotAuthorized : record { msg : text; caller : principal };
+};
 type Event = record {
   id : nat64;
   updated_at : opt nat64;
-  eventDescription : text;
+  event_title : text;
   owner : text;
+  event_description : text;
+  event_card_imgurl : text;
   created_at : nat64;
-  eventTitle : text;
-  eventLocation : text;
+  event_location : text;
   attendees : vec text;
-  eventCardImgUrl : text;
 };
 type EventPayload = record {
-  eventDescription : text;
-  eventTitle : text;
-  eventLocation : text;
-  eventCardImgUrl : text;
+  event_title : text;
+  event_description : text;
+  event_card_imgurl : text;
+  event_location : text;
 };
 type Result = variant { Ok : Event; Err : Error };
 service : {
