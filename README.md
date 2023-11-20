@@ -1,4 +1,12 @@
-# icp_rust_message_board_contract
+# icp_rust_event_contract
+
+This a canister that allows users to:
+
+1. Create an event
+2. Fetch and view event by an id
+3. Register for an event
+4. Update event by an id
+5. Delete an event if you are the owner of that event
 
 ### Requirements
 * rustc 1.64 or higher
@@ -25,7 +33,7 @@ $ dfx start --background
 If you want to start working on your project right away, you might want to try the following commands:
 
 ```bash
-$ cd icp_rust_boilerplate/
+$ cd icp_rust/
 $ dfx help
 $ dfx canister --help
 ```
