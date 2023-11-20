@@ -2,11 +2,11 @@
 
 This a canister that allows users to:
 
-1. Create an event
-2. Fetch and view event by an id
-3. Register for an event
-4. Update event by an id
-5. Delete an event if you are the owner of that event
+1. Create an event.
+2. Fetch and view the event by its ID.
+3. Mark an RSVP for an event once.
+4. Update the event by its ID.
+5. Delete an event if you are the owner of that event.
 
 ### Requirements
 * rustc 1.64 or higher
