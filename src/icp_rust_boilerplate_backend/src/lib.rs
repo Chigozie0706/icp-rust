@@ -1,6 +1,7 @@
 #[macro_use]
     extern crate serde;
     use candid::{Decode, Encode};
+    use validator::Validate;
     use ic_cdk::api::time;
     use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
     use ic_stable_structures::{BoundedStorable, Cell, DefaultMemoryImpl, StableBTreeMap, Storable};
@@ -64,10 +65,13 @@
 
 
     // Event payload for creating or updating an Event
-    #[derive(candid::CandidType, Serialize, Deserialize, Default)]
+    #[derive(candid::CandidType, Serialize, Deserialize, Default, Validate)]
     struct EventPayload {
+        #[validate(length(min = 10))] 
         event_description: String,
+        #[validate(length(min = 5))]
         event_title: String,
+        #[validate(length(min = 2))]
         event_location : String,
         event_card_imgurl : String,
     }
@@ -92,7 +96,13 @@
     
     // Function to create a new event based on the provided payload
     #[ic_cdk::update]
-    fn create_event(payload: EventPayload) -> Option<Event> {
+    fn create_event(payload: EventPayload) -> Result<Event, Error> {
+        // Validates payload
+        let check_payload = _check_input(&payload);
+        // Returns an error if validations failed
+        if check_payload.is_err(){
+            return Err(check_payload.err().unwrap());
+        }
         // Increment the unique identifier for the new event
         let id = ID_COUNTER
             .with(|counter| {
@@ -118,29 +128,35 @@
         do_insert(&event);
 
         // Return the newly created event as an Option
-        Some(event)
+        Ok(event)
     }
 
 
     // Update function to modify the details of an existing event
     #[ic_cdk::update]
     fn update_event(id: u64, payload: EventPayload) -> Result<Event, Error> {
-    
-    // Check if the caller is the owner of the event; if not, return an authorization error
-    if !_check_if_owner(&_get_event(&id).unwrap().clone()){
-        return Err(Error::NotAuthorized {
-            msg: format!(
-                "You're not the owner of the event with id={}",
-                id
-            ),
-            caller: caller()
-        })
+    // Validates payload
+    let check_payload = _check_input(&payload);
+    // Returns an error if validations failed
+    if check_payload.is_err(){
+        return Err(check_payload.err().unwrap());
     }
 
         // Attempt to retrieve the event from storage based on its unique identifier
         match STORAGE.with(|service| service.borrow().get(&id)) {
            
             Some(mut event) => {
+
+                // Check if the caller is the owner of the event; if not, return an authorization error
+                if !_check_if_owner(&event){
+                    return Err(Error::NotAuthorized {
+                        msg: format!(
+                            "You're not the owner of the event with id={}",
+                            id
+                        ),
+                        caller: caller()
+                    })
+                }
 
                 // Update event details with the provided payload
                 event.event_description = payload.event_description;
@@ -206,9 +222,11 @@
     // Update function to delete a specific event by its unique identifier
     #[ic_cdk::update]
     fn delete_event(id: u64) -> Result<Event, Error> {
-    
+    let event = _get_event(&id).expect(&format!("couldn't delete a event with id={}. event not found.", id));
+    // Validates whether caller is the owner of the event
+    let check_if_owner = _check_if_owner(&event);
     // Check if the caller is the owner of the event; if not, return an authorization error
-    if !_check_if_owner(&_get_event(&id).unwrap().clone()){
+    if !check_if_owner{
         return Err(Error::NotAuthorized {
             msg: format!(
                 "You're not the owner of the event with id={}",
@@ -243,6 +261,8 @@
 
         // Indicates an authorization error when the caller is not the owner of the event
         NotAuthorized {msg: String , caller: Principal},
+
+        ValidationFailed { content: String}
     }
 
 
@@ -259,11 +279,21 @@
     // Helper function to check whether the caller is the owner of the event
     fn _check_if_owner(event: &Event) -> bool {
     if event.owner.to_string() != caller().to_string(){
-        false  
+        return false  
     }else{
-        true
+        return true
     }
 }
+
+    // Helper function to check the input data of the payload
+    fn _check_input(payload: &EventPayload) -> Result<(), Error> {
+        let check_payload = payload.validate();
+        if check_payload.is_err() {
+            return Err(Error:: ValidationFailed{ content: check_payload.err().unwrap().to_string()})
+        }else{
+            Ok(())
+        }
+    }
 
 
 
