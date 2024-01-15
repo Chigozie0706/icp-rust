@@ -8,6 +8,7 @@
     use ic_cdk::caller;
     use candid::Principal;
 
+
     type Memory = VirtualMemory<DefaultMemoryImpl>;
     type IdCell = Cell<u64, Memory>;
 
@@ -88,6 +89,27 @@
             }),
         }
     }
+
+
+// Function to get all events created
+#[ic_cdk::query]
+fn get_all_events() -> Result<Vec<Event>, Error> {
+    
+    let events: Vec<(u64, Event)> = STORAGE.with(|service| service.borrow().iter().collect());
+    let event_list: Vec<Event> = events.into_iter().map(|(_, event)| event).collect();
+
+    // Check if the event_list is not empty.
+    if !event_list.is_empty() {
+
+    // If there are events, return them as Ok(result).
+        Ok(event_list) 
+    } else {
+    // If there are no events, return an Err variant with a custom error.
+        Err(Error::NotFound {
+            msg: format!("no event avaliable"),
+        }) 
+    }
+}
 
     
     // Function to create a new event based on the provided payload

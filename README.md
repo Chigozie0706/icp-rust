@@ -7,6 +7,7 @@ This a canister that allows users to:
 3. Mark an RSVP for an event once.
 4. Update the event by its ID.
 5. Delete an event if you are the owner of that event.
+6. Fetch all events created.
 
 ### Requirements
 * rustc 1.64 or higher
